@@ -46,7 +46,7 @@ def user_n_duration(An_i):
 
 
 # There would be 20 users in this game.
-N = 1
+N = 20
 
 # There should be a data point for shiftable and non- shiftable loads and we
 # make that data for each users of the game randomly. We assigning
@@ -158,7 +158,7 @@ for i in range(N):
         non_shiftables_for_user_n
     )  # concatenating the 2 for the given user
 
-print(user_data[:3])
+# print(user_data[:3])
 # what is missing, each user would need to have an xn
 # getting the xn_s for the different players.
 users_X_Ns = []
@@ -176,16 +176,23 @@ for i in range(N):# for each user
 user_0_schedule_xn = [[] for i in range(24)] # each is for an hour of the day
 xns_user0 = users_X_Ns[0]
 non_shiftable = list(filter(lambda xn: xn.type == NON_SHIFTABLE, xns_user0))
-shiftable = filter(lambda xn: xn.type == SHIFTABLE, xns_user0)
+shiftable = list(filter(lambda xn: xn.type == SHIFTABLE, xns_user0))
 non_shiftable.sort(key=lambda x:x.name)
 hour = 0
 xn_prev = X_n(appliance=None)
 while non_shiftable:
-    xn = non_shiftable.pop()
-    
+    xn = non_shiftable.pop()   
     if xn.name != xn_prev.name:
         hour=0
-    
+    user_0_schedule_xn[hour].append(xn)
+    hour+=1
+    xn_prev = xn
+hour = 0
+xn_prev = X_n(appliance=None)
+while shiftable:
+    xn = shiftable.pop()   
+    if xn.name != xn_prev.name:
+        hour=0
     user_0_schedule_xn[hour].append(xn)
     hour+=1
     xn_prev = xn
