@@ -1,6 +1,6 @@
 import random
 from math import ceil
-
+from scipy.optimize import linprog
 from numpy import sort
 
 # Algorithm 1: Executed by each user.
@@ -43,6 +43,44 @@ def user_n_duration(An_i):
     )
     An_i["user__duration"] = An_i["user__duration"] if An_i["user__duration"]<=24 else 24
     return An_i
+
+
+class X_n_i_scheduled:
+
+    def __init__(self, user_i_X_Ns: list) -> None:
+        self.schedule = [[] for i in range(24)] # each is for an hour of the day
+        self.xns_user_i = user_i_X_Ns
+        self.run_scheduling_on_initial()
+        
+
+    def run_scheduling_on_initial(self):
+        non_shiftable = list(filter(lambda xn: xn.type == NON_SHIFTABLE, self.xns_user_i))
+        non_shiftable.sort(key=lambda x:x.name)
+
+        hour = 0
+        xn_prev = X_n(appliance=None)
+        while non_shiftable:
+            xn = non_shiftable.pop()   
+            if xn.name != xn_prev.name:
+                hour=0
+            self.schedule[hour].append(xn)
+            hour+=1
+            xn_prev = xn
+        
+        shiftable = list(filter(lambda xn: xn.type == SHIFTABLE, self.xns_user_i))
+        shiftable.sort(key=lambda x:x.name)
+
+        hour = 0
+        xn_prev = X_n(appliance=None)
+        while shiftable:
+            xn = shiftable.pop()   
+            if xn.name != xn_prev.name:
+                hour=0
+            self.schedule[hour].append(xn)
+            hour+=1
+            xn_prev = xn
+    
+
 
 
 # There would be 20 users in this game.
@@ -175,9 +213,13 @@ for i in range(N):# for each user
 # print((users_X_Ns[0]))
 user_0_schedule_xn = [[] for i in range(24)] # each is for an hour of the day
 xns_user0 = users_X_Ns[0]
+
 non_shiftable = list(filter(lambda xn: xn.type == NON_SHIFTABLE, xns_user0))
-shiftable = list(filter(lambda xn: xn.type == SHIFTABLE, xns_user0))
 non_shiftable.sort(key=lambda x:x.name)
+
+shiftable = list(filter(lambda xn: xn.type == SHIFTABLE, xns_user0))
+shiftable.sort(key=lambda x:x.name)
+
 hour = 0
 xn_prev = X_n(appliance=None)
 while non_shiftable:
