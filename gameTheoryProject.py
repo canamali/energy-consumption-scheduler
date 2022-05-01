@@ -1,6 +1,6 @@
 import random
 from math import ceil
-from scipy.optimize import linprog
+# from scipy.optimize import linprog
 from numpy import sort
 
 # Algorithm 1: Executed by each user.
@@ -47,7 +47,8 @@ def user_n_duration(An_i):
 
 class X_n_i_scheduled:
 
-    def __init__(self, user_i_X_Ns: list) -> None:
+    def __init__(self, user_i_X_Ns: list, user_id: int) -> None:
+        self.user_id = user_id
         self.schedule = [[] for i in range(24)] # each is for an hour of the day
         self.xns_user_i = user_i_X_Ns
         self.run_scheduling_on_initial()
@@ -79,6 +80,13 @@ class X_n_i_scheduled:
             self.schedule[hour].append(xn)
             hour+=1
             xn_prev = xn
+
+    def __str__(self) -> str:
+        return f"user-{self.user_id}->{len(self.xns_user_i)}"
+
+    def __repr__(self) -> str:
+        return f"user-{self.user_id}->{len(self.xns_user_i)}"
+
     
 
 
@@ -211,35 +219,13 @@ for i in range(N):# for each user
         users_X_Ns[i].extend(X_n_i)
 
 # print((users_X_Ns[0]))
-user_0_schedule_xn = [[] for i in range(24)] # each is for an hour of the day
 xns_user0 = users_X_Ns[0]
+X_N_all = []
 
-non_shiftable = list(filter(lambda xn: xn.type == NON_SHIFTABLE, xns_user0))
-non_shiftable.sort(key=lambda x:x.name)
+for i in range(N):
+    X_N_all.append(X_n_i_scheduled(user_i_X_Ns=users_X_Ns[i], user_id=i))
 
-shiftable = list(filter(lambda xn: xn.type == SHIFTABLE, xns_user0))
-shiftable.sort(key=lambda x:x.name)
-
-hour = 0
-xn_prev = X_n(appliance=None)
-while non_shiftable:
-    xn = non_shiftable.pop()   
-    if xn.name != xn_prev.name:
-        hour=0
-    user_0_schedule_xn[hour].append(xn)
-    hour+=1
-    xn_prev = xn
-hour = 0
-xn_prev = X_n(appliance=None)
-while shiftable:
-    xn = shiftable.pop()   
-    if xn.name != xn_prev.name:
-        hour=0
-    user_0_schedule_xn[hour].append(xn)
-    hour+=1
-    xn_prev = xn
-    
-print(user_0_schedule_xn)
+print(X_N_all)
 # first, I have to guess how long user n is planning on using the equipment -> DONE
 # get the number of chunks it can be broken down to
 # spread then along the chunks within the alloted spacing of frames.
