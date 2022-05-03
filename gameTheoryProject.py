@@ -1,6 +1,8 @@
+from functools import reduce
 import random
 from math import ceil
-# from scipy.optimize import linprog
+
+from scipy.optimize import linprog
 from numpy import sort
 
 # Algorithm 1: Executed by each user.
@@ -41,54 +43,66 @@ def user_n_duration(An_i):
     An_i["user__duration"] = random.uniform(
         An_i["average_use_duration"] * 0.7, An_i["average_use_duration"] * 1.25
     )
-    An_i["user__duration"] = An_i["user__duration"] if An_i["user__duration"]<=24 else 24
+    An_i["user__duration"] = (
+        An_i["user__duration"] if An_i["user__duration"] <= 24 else 24
+    )
     return An_i
 
 
 class X_n_i_scheduled:
-
     def __init__(self, user_i_X_Ns: list, user_id: int) -> None:
         self.user_id = user_id
-        self.schedule = [[] for i in range(24)] # each is for an hour of the day
+        self.schedule = [[] for i in range(24)]  # each is for an hour of the day
         self.xns_user_i = user_i_X_Ns
         self.run_scheduling_on_initial()
-        
 
     def run_scheduling_on_initial(self):
-        non_shiftable = list(filter(lambda xn: xn.type == NON_SHIFTABLE, self.xns_user_i))
-        non_shiftable.sort(key=lambda x:x.name)
+        non_shiftable = list(
+            filter(lambda xn: xn.type == NON_SHIFTABLE, self.xns_user_i)
+        )
+        non_shiftable.sort(key=lambda x: x.name)
 
         hour = 0
         xn_prev = X_n(appliance=None)
         while non_shiftable:
-            xn = non_shiftable.pop()   
+            xn = non_shiftable.pop()
             if xn.name != xn_prev.name:
-                hour=0
+                hour = 0
             self.schedule[hour].append(xn)
-            hour+=1
+            hour += 1
             xn_prev = xn
-        
+
         shiftable = list(filter(lambda xn: xn.type == SHIFTABLE, self.xns_user_i))
-        shiftable.sort(key=lambda x:x.name)
+        shiftable.sort(key=lambda x: x.name)
 
         hour = 0
         xn_prev = X_n(appliance=None)
         while shiftable:
-            xn = shiftable.pop()   
+            xn = shiftable.pop()
             if xn.name != xn_prev.name:
-                hour=0
+                hour = 0
             self.schedule[hour].append(xn)
-            hour+=1
+            hour += 1
             xn_prev = xn
+
+    def compute_daily_load_for_user_n(self):
+        # print(self.xns_user_i)
+        # daily_load = 0
+        # for i in self.xns_user_i:
+        #     daily_load+= i.consumption
+        # print(daily_load)
+        return reduce(
+            lambda first, second: X_n(
+                "reduce", consumption=first.consumption + second.consumption
+            ),
+            self.xns_user_i,
+        ).consumption
 
     def __str__(self) -> str:
         return f"user-{self.user_id}->{len(self.xns_user_i)}"
 
     def __repr__(self) -> str:
         return f"user-{self.user_id}->{len(self.xns_user_i)}"
-
-    
-
 
 
 # There would be 20 users in this game.
@@ -208,12 +222,16 @@ for i in range(N):
 # what is missing, each user would need to have an xn
 # getting the xn_s for the different players.
 users_X_Ns = []
-for i in range(N):# for each user
+for i in range(N):  # for each user
     users_X_Ns.append(list())
     for j in range(len(user_data[i])):
         current_A_n = user_data[i][j]
         X_n_i = [
-            X_n(appliance=current_A_n["name"], consumption=current_A_n["consumption"], type_of_load=current_A_n["type"])
+            X_n(
+                appliance=current_A_n["name"],
+                consumption=current_A_n["consumption"],
+                type_of_load=current_A_n["type"],
+            )
             for k in range(ceil(current_A_n["user__duration"]))
         ]
         users_X_Ns[i].extend(X_n_i)
@@ -225,17 +243,23 @@ X_N_all = []
 for i in range(N):
     X_N_all.append(X_n_i_scheduled(user_i_X_Ns=users_X_Ns[i], user_id=i))
 
-print(X_N_all)
+# print(X_N_all)
 # first, I have to guess how long user n is planning on using the equipment -> DONE
 # get the number of chunks it can be broken down to
 # spread then along the chunks within the alloted spacing of frames.
 # DS for user n= [[], []...24], 24 lists of lists, each is an hour.
 
 # use this to properly compute the lns
-ln = [[random.random() * 40 + 10] for i in range(N)]
-# print(ln)
+
+ln = []
+for i in range(N):
+
+    ln.append(X_N_all[i].compute_daily_load_for_user_n())
+print(ln)
 # Note ln is the vector containing the scheduled daily energy consumption
 # for all other users.
+
+# linprog(method="interior-point")
 
 # Solve the optimazation problem
 # - what are the inputs
